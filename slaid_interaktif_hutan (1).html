@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Misi Menyelamatkan Hutan 🌳</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+    }
+    .title-font {
+      font-family: 'Fredoka One', cursive;
+    }
+    .shake-animation {
+      animation: shake 0.5s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .scale-up {
+      animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    /* Dynamic background wind effect */
+    .wind {
+      animation: windBlow 4s ease-in-out infinite alternate;
+    }
+    @keyframes windBlow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(3deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-800">
+
+  <!-- Top Navigation & Interactive Progress Bar -->
+  <header class="w-full max-w-4xl mx-auto px-4 pt-4 md:pt-6">
+    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-md border border-emerald-100/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-bounce">🌳</span>
+        <div>
+          <h1 class="title-font text-emerald-800 text-lg md:text-xl leading-none">Misi Penyelamat Hutan</h1>
+          <p class="text-xs text-emerald-600 font-bold">Bantu pulihkan hutan kita!</p>
+        </div>
+      </div>
+      <!-- Progress visual steps -->
+      <div class="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+        <div id="step-1-indicator" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-600 text-white shadow-sm transition-all duration-300">1</div>
+        <div class="w-6 h-1 bg-emerald-200 rounded" id="line-1"></div>
+        <div id="step-2-indicator" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-white text-emerald-400 border border-emerald-200 transition-all duration-300">2</div>
+        <div class="w-6 h-1 bg-emerald-200 rounded" id="line-2"></div>
+        <div id="step-3-indicator" class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-white text-emerald-400 border border-emerald-200 transition-all duration-300">3</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Playground & Slide Container -->
+  <main class="flex-grow w-full max-w-4xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6 items-stretch justify-center">
+    
+    <!-- Left interactive forest status map (Grows as user answers correctly) -->
+    <div class="w-full lg:w-2/5 bg-white/70 backdrop-blur-md rounded-3xl p-6 shadow-xl border border-emerald-100 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[250px] lg:min-h-0">
+      <div class="absolute inset-0 bg-gradient-to-t from-emerald-50/50 to-transparent pointer-events-none"></div>
+      
+      <div class="relative z-10 w-full">
+        <span class="text-xs uppercase tracking-wider bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">Keadaan Hutan Semasa</span>
+      </div>
+
+      <!-- Interactive SVG Forest -->
+      <div class="w-full h-48 flex items-center justify-center relative z-10 my-4">
+        <!-- SVG Canvas for the forest changes -->
+        <svg viewBox="0 0 200 120" class="w-full h-full max-w-[280px]">
+          <!-- Ground -->
+          <path d="M10,100 Q100,85 190,100 L190,120 L10,120 Z" fill="#8B5A2B" />
+          <path d="M10,100 Q100,85 190,100 Q100,92 10,100 Z" fill="#4CAF50" />
+          
+          <!-- Background Mountains -->
+          <polygon points="30,100 65,40 100,100" fill="#A7F3D0" opacity="0.5" />
+          <polygon points="80,100 120,30 160,100" fill="#A7F3D0" opacity="0.4" />
+
+          <!-- Interactive elements to toggle -->
+          <!-- Dead/Chopped Tree stumps (Initially visible, disappears as we restore) -->
+          <g id="stump-group" class="transition-all duration-500 opacity-100">
+            <!-- Stump 1 -->
+            <path d="M45,98 L50,85 L56,85 L60,98 Z" fill="#5C3A21" />
+            <ellipse cx="53" cy="85" rx="3" ry="1.5" fill="#CD853F" />
+            <!-- Stump 2 -->
+            <path d="M145,98 L150,88 L155,88 L160,98 Z" fill="#5C3A21" />
+            <ellipse cx="152" cy="88" rx="2.5" ry="1.2" fill="#CD853F" />
+          </g>
+
+          <!-- Restored Tree 1 (Revealed after Q1) -->
+          <g id="restored-tree-1" class="transition-all duration-700 opacity-0 transform translate-y-10 scale-0 origin-bottom" style="transform-origin: 53px 98px;">
+            <rect x="50" y="70" width="6" height="28" fill="#5C3A21" />
+            <!-- Leaves (layered circles) -->
+            <circle cx="53" cy="65" r="14" fill="#059669" class="wind" />
+            <circle cx="45" cy="58" r="10" fill="#10B981" />
+            <circle cx="61" cy="58" r="10" fill="#34D399" />
+          </g>
+
+          <!-- Restored Tree 2 & Return of Cute Bird (Revealed after Q2) -->
+          <g id="restored-tree-2" class="transition-all duration-700 opacity-0 transform translate-y-10 scale-0" style="transform-origin: 152px 98px;">
+            <rect x="149" y="65" width="6" height="33" fill="#5C3A21" />
+            <!-- Leaves -->
+            <circle cx="152" cy="55" r="15" fill="#047857" class="wind" />
+            <circle cx="143" cy="46" r="11" fill="#059669" />
+            <circle cx="161" cy="46" r="11" fill="#10B981" />
+            <!-- Cute Bird -->
+            <g id="cute-bird" class="transition-all duration-1000 delay-300 opacity-0 transform -translate-y-5">
+              <circle cx="145" cy="35" r="5" fill="#EF4444" />
+              <polygon points="145,35 149,36 145,38" fill="#FBBF24" />
+              <circle cx="144" cy="34" r="1" fill="white" />
+              <path d="M141,36 Q143,39 145,36" stroke="#EF4444" stroke-width="1.5" fill="none" />
+            </g>
+          </g>
+
+          <!-- Ultimate Forest Bloom (Flowers & Butterflies - Revealed after Q3) -->
+          <g id="forest-bloom" class="transition-all duration-1000 opacity-0">
+            <!-- Flower 1 -->
+            <circle cx="95" cy="98" r="3" fill="#EC4899" />
+            <circle cx="95" cy="98" r="1" fill="#FBBF24" />
+            <!-- Flower 2 -->
+            <circle cx="110" cy="96" r="3" fill="#8B5CF6" />
+            <circle cx="110" cy="96" r="1" fill="#FBBF24" />
+            <!-- Butterfly flying -->
+            <path d="M100,50 Q105,45 102,40 Q98,42 100,50" fill="#3B82F6" class="wind" />
+            <path d="M100,50 Q95,45 98,40 Q102,42 100,50" fill="#3B82F6" class="wind" />
+          </g>
+        </svg>
+      </div>
+
+      <div class="relative z-10">
+        <p id="forest-status-text" class="text-sm font-bold text-slate-600 transition-colors duration-300">Hutan sedang mengalami ancaman teruk...</p>
+      </div>
+    </div>
+
+    <!-- Right Side: Interactive Question Slides Box -->
+    <div class="w-full lg:w-3/5 bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-emerald-50 flex flex-col justify-between relative overflow-hidden">
+      <!-- Decor background leaf shapes -->
+      <div class="absolute -right-10 -top-10 text-emerald-50 text-9xl select-none opacity-40 pointer-events-none transform rotate-45">
+        <i class="fa-solid fa-leaf"></i>
+      </div>
+
+      <!-- Slide Inner Container (Switches dynamic questions) -->
+      <div id="quiz-container" class="relative z-10 flex-grow flex flex-col justify-center">
+        <!-- Questions will be injected here dynamically by JS -->
+      </div>
+
+      <!-- Feedback Area: Slides-in or reveals beautifully below choices or inside custom card -->
+      <div id="feedback-card" class="hidden mt-6 scale-up">
+        <div id="feedback-bg" class="rounded-2xl p-5 border flex items-start gap-4 transition-all duration-300">
+          <span id="feedback-icon" class="text-3xl mt-1 shrink-0"></span>
+          <div class="flex-grow">
+            <h4 id="feedback-title" class="title-font text-lg font-bold"></h4>
+            <p id="feedback-text" class="text-sm mt-1 text-slate-600 font-medium"></p>
+            <div class="mt-4 flex justify-end">
+              <button id="next-btn" onclick="handleNextStep()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 transform active:scale-95 text-sm">
+                <span>Teruskan</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Cute Interactive Character Mascot at Footer -->
+  <footer class="w-full max-w-4xl mx-auto px-4 pb-6">
+    <div class="flex items-center justify-center gap-3 bg-emerald-800 text-emerald-50 rounded-2xl p-3 shadow-md">
+      <span class="text-2xl animate-bounce">🦉</span>
+      <p id="mascot-bubble" class="text-xs md:text-sm font-medium">Hai! Saya Cikgu Burung Hantu. Bantu saya membuat pilihan bijak untuk menyelamatkan tempat tinggal kami!</p>
+    </div>
+  </footer>
+
+  <script>
+    // Audio synthesizer helper for highly interactive game audio feedback without needing external mp3 files
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      const now = audioCtx.currentTime;
+      
+      if (type === 'correct') {
+        // Happy arpeggio
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(261.63, now); // C4
+        osc.frequency.setValueAtTime(329.63, now + 0.1); // E4
+        osc.frequency.setValueAtTime(392.00, now + 0.2); // G4
+        osc.frequency.setValueAtTime(523.25, now + 0.3); // C5
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } else if (type === 'wrong') {
+        // Soft "Whoops" slide down
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'click') {
+        // Sharp quick select sound
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      } else if (type === 'victory') {
+        // High pitched magical sparkle sound
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.15); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.3); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.45); // C6
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+        osc.start(now);
+        osc.stop(now + 0.8);
+      }
+    }
+
+    // Question content database containing questions, options, indicators, and detailed tailored guidance
+    const questions = [
+      {
+        question: "Apakah yang berlaku kepada pokok?",
+        options: [
+          { key: "A", text: "Pokok ditebang", isCorrect: true },
+          { key: "B", text: "Pokok sedang berbunga", isCorrect: false },
+          { key: "C", text: "Pokok sedang membesar", isCorrect: false }
+        ],
+        guidance: {
+          correct: "Hebat! Pokok ditebang oleh manusia sehingga meninggalkan tunggul kayu. Mari kita bantu menghentikan kemusnahan ini!",
+          incorrect: "Cuba lagi! Perhatikan batang kayu yang terpotong di tanah itu. Adakah ia masih bertumbuh segar?"
+        }
+      },
+      {
+        question: "Mengapa haiwan kehilangan rumah?",
+        options: [
+          { key: "A", text: "Haiwan mahu berpindah", isCorrect: false },
+          { key: "B", text: "Pokok ditebang", isCorrect: true },
+          { key: "C", text: "Haiwan sedang bercuti", isCorrect: false }
+        ],
+        guidance: {
+          correct: "Tepat sekali! Pokok adalah tempat perlindungan dan habitat haiwan. Apabila pokok ditebang, mereka tidak mempunyai rumah lagi.",
+          incorrect: "Fikirkan... Jika rumah (pokok) dipotong, ke mana haiwan seperti burung mahu singgah? Adakah mereka suka-suka berpindah?"
+        }
+      },
+      {
+        question: "Apa yang patut kita lakukan?",
+        options: [
+          { key: "A", text: "Menanam pokok", isCorrect: true },
+          { key: "B", text: "Menebang lebih banyak pokok", isCorrect: false },
+          { key: "C", text: "Membuang sampah di hutan", isCorrect: false }
+        ],
+        guidance: {
+          correct: "Syabas! Menanam semula pokok (penghutanan semula) dapat memulihkan kembali ekosistem hutan kita tercinta!",
+          incorrect: "Oh tidak! Jika kita terus memotong atau membuang sampah, hutan akan terus mati. Pilihlah tindakan hijau yang menyuburkan hutan!"
+        }
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+    let selectedOptionElement = null;
+    let hasAnsweredCorrectly = false;
+
+    // Start by rendering the first question directly (No intro slides!)
+    window.onload = function() {
+      renderQuestion();
+    };
+
+    function renderQuestion() {
+      hasAnsweredCorrectly = false;
+      selectedOptionElement = null;
+      
+      const quizContainer = document.getElementById("quiz-container");
+      const currentData = questions[currentQuestionIndex];
+
+      // Update Top Nav Indicator
+      updateProgressIndicators();
+
+      // Clear previous styles and update feedback box to hidden state
+      document.getElementById("feedback-card").classList.add("hidden");
+
+      // Inject HTML for slide content
+      quizContainer.innerHTML = `
+        <div class="scale-up">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-lg text-xs">Soalan ${currentQuestionIndex + 1} daripada 3</span>
+          </div>
+          <h2 class="title-font text-slate-800 text-2xl md:text-3xl font-bold mb-6">${currentData.question}</h2>
+          
+          <div class="space-y-3 md:space-y-4" id="options-grid">
+            ${currentData.options.map(opt => `
+              <button 
+                onclick="checkAnswer(this, ${opt.isCorrect}, '${opt.key}')" 
+                class="option-btn w-full text-left bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200/80 hover:border-emerald-300 p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 group shadow-sm hover:shadow-md transform active:scale-[0.99] relative"
+              >
+                <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 group-hover:border-emerald-300 group-hover:bg-emerald-100/50 flex items-center justify-center font-bold text-slate-600 group-hover:text-emerald-700 transition-colors shrink-0">
+                  ${opt.key}
+                </div>
+                <span class="font-semibold text-slate-700 text-base md:text-lg">${opt.text}</span>
+                <span class="absolute right-4 text-xl opacity-0 transform translate-x-2 transition-all duration-300 flex items-center gap-1" id="icon-${opt.key}"></span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function checkAnswer(element, isCorrect, key) {
+      playSound('click');
+      
+      // If student already answered correctly for this question, don't re-trigger
+      if (hasAnsweredCorrectly) return;
+
+      const allOptionButtons = document.querySelectorAll(".option-btn");
+      const currentData = questions[currentQuestionIndex];
+      const feedbackCard = document.getElementById("feedback-card");
+      const feedbackBg = document.getElementById("feedback-bg");
+      const feedbackIcon = document.getElementById("feedback-icon");
+      const feedbackTitle = document.getElementById("feedback-title");
+      const feedbackText = document.getElementById("feedback-text");
+      const mascotBubble = document.getElementById("mascot-bubble");
+
+      // Reset previous option visual styles
+      allOptionButtons.forEach(btn => {
+        btn.classList.remove("border-emerald-500", "bg-emerald-50", "border-red-400", "bg-red-50", "shake-animation");
+        const iconContainer = btn.querySelector("[id^='icon-']");
+        iconContainer.className = "absolute right-4 text-xl opacity-0 transform translate-x-2 transition-all duration-300 flex items-center gap-1";
+        iconContainer.innerHTML = "";
+      });
+
+      if (isCorrect) {
+        playSound('correct');
+        hasAnsweredCorrectly = true;
+        
+        // Success Styling on the chosen button
+        element.classList.add("border-emerald-500", "bg-emerald-50");
+        const icon = element.querySelector(`#icon-${key}`);
+        icon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i>`;
+        icon.classList.remove("opacity-0", "translate-x-2");
+
+        // Custom canvas confetti reward!
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.8 }
+        });
+
+        // Update interactive SVG forest based on progress milestone
+        triggerForestGrowth(currentQuestionIndex + 1);
+
+        // Populate Success Feedback
+        feedbackCard.classList.remove("hidden");
+        feedbackBg.className = "rounded-2xl p-5 border border-emerald-200 bg-emerald-50 flex items-start gap-4 scale-up";
+        feedbackIcon.innerHTML = "🎉";
+        feedbackTitle.innerText = "Syabas! Jawapan Betul!";
+        feedbackTitle.className = "title-font text-lg font-bold text-emerald-800";
+        feedbackText.innerText = currentData.guidance.correct;
+        feedbackText.className = "text-sm mt-1 text-emerald-700 font-medium";
+
+        // Update helper mascot talk bubble
+        mascotBubble.innerHTML = "Hebat! Lihat hutan kita mula berubah dan pulih sedikit demi sedikit! 🌿";
+
+      } else {
+        playSound('wrong');
+        // Shake the wrong option
+        element.classList.add("border-red-400", "bg-red-50", "shake-animation");
+        const icon = element.querySelector(`#icon-${key}`);
+        icon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i>`;
+        icon.classList.remove("opacity-0", "translate-x-2");
+
+        // Populate Guidance Feedback (Guiding the student to answer correctly)
+        feedbackCard.classList.remove("hidden");
+        feedbackBg.className = "rounded-2xl p-5 border border-amber-200 bg-amber-50 flex items-start gap-4 scale-up";
+        feedbackIcon.innerHTML = "💡";
+        feedbackTitle.innerText = "Cuba Lagi! Ini Petunjuk Untuk Anda:";
+        feedbackTitle.className = "title-font text-lg font-bold text-amber-800";
+        feedbackText.innerText = currentData.guidance.incorrect;
+        feedbackText.className = "text-sm mt-1 text-amber-700 font-medium";
+
+        // Update helper mascot talk bubble
+        mascotBubble.innerHTML = "Jangan putus asa, mari cuba cari jawapan terbaik untuk memelihara pokok! 🦉";
+      }
+    }
+
+    function triggerForestGrowth(stage) {
+      const stumpGroup = document.getElementById("stump-group");
+      const tree1 = document.getElementById("restored-tree-1");
+      const tree2 = document.getElementById("restored-tree-2");
+      const bird = document.getElementById("cute-bird");
+      const bloom = document.getElementById("forest-bloom");
+      const statusText = document.getElementById("forest-status-text");
+
+      if (stage === 1) {
+        stumpGroup.style.opacity = "0.4";
+        tree1.classList.remove("opacity-0", "scale-0", "translate-y-10");
+        tree1.classList.add("opacity-100", "scale-100", "translate-y-0");
+        statusText.innerText = "Mula membaik: Satu pokok baru berjaya diselamatkan!";
+        statusText.className = "text-sm font-bold text-emerald-700";
+      } else if (stage === 2) {
+        tree2.classList.remove("opacity-0", "scale-0", "translate-y-10");
+        tree2.classList.add("opacity-100", "scale-100", "translate-y-0");
+        setTimeout(() => {
+          bird.classList.remove("opacity-0", "-translate-y-5");
+          bird.classList.add("opacity-100", "translate-y-0");
+        }, 500);
+        statusText.innerText = "Indah: Pokok kembali bertumbuh dan hidupan liar pulang!";
+        statusText.className = "text-sm font-bold text-emerald-700";
+      } else if (stage === 3) {
+        stumpGroup.style.opacity = "0";
+        bloom.classList.remove("opacity-0");
+        bloom.classList.add("opacity-100");
+        statusText.innerText = "Luar Biasa! Hutan pulih sepenuhnya dengan bunga dan rama-rama!";
+        statusText.className = "text-sm font-bold text-emerald-800 animate-pulse";
+      }
+    }
+
+    function updateProgressIndicators() {
+      const s1 = document.getElementById("step-1-indicator");
+      const s2 = document.getElementById("step-2-indicator");
+      const s3 = document.getElementById("step-3-indicator");
+      const l1 = document.getElementById("line-1");
+      const l2 = document.getElementById("line-2");
+
+      // Reset styles
+      s1.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-white text-emerald-400 border border-emerald-200 transition-all duration-300";
+      s2.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-white text-emerald-400 border border-emerald-200 transition-all duration-300";
+      s3.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-white text-emerald-400 border border-emerald-200 transition-all duration-300";
+      l1.className = "w-6 h-1 bg-emerald-200 rounded";
+      l2.className = "w-6 h-1 bg-emerald-200 rounded";
+
+      if (currentQuestionIndex === 0) {
+        s1.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-600 text-white shadow-md";
+      } else if (currentQuestionIndex === 1) {
+        s1.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
+        s2.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-600 text-white shadow-md";
+        l1.className = "w-6 h-1 bg-emerald-600 rounded transition-all duration-500";
+      } else if (currentQuestionIndex === 2) {
+        s1.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
+        s2.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
+        s3.className = "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-emerald-600 text-white shadow-md";
+        l1.className = "w-6 h-1 bg-emerald-600 rounded";
+        l2.className = "w-6 h-1 bg-emerald-600 rounded transition-all duration-500";
+      }
+    }
+
+    function handleNextStep() {
+      if (currentQuestionIndex < 2) {
+        currentQuestionIndex++;
+        renderQuestion();
+      } else {
+        // Complete state - Show beautiful immersive success interactive slide
+        showSuccessSummary();
+      }
+    }
+
+    function showSuccessSummary() {
+      playSound('victory');
+      
+      // Giant confetti cascade!
+      var duration = 3 * 1000;
+      var end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+
+      const quizContainer = document.getElementById("quiz-container");
+      document.getElementById("feedback-card").classList.add("hidden");
+
+      // Replace slide content with final dynamic game victory stats
+      quizContainer.innerHTML = `
+        <div class="text-center py-6 scale-up">
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 text-5xl mb-6 animate-bounce">
+            🌳
+          </div>
+          <h2 class="title-font text-emerald-800 text-3xl font-bold mb-4">Hutan Berjaya Dipulihkan!</h2>
+          <p class="text-slate-600 text-base md:text-lg mb-6 leading-relaxed">
+            Tahniah pelajar pintar! Hasil daripada jawapan tepat anda, pokok-pokok telah ditanam semula, hidupan liar kini mempunyai rumah baru, dan ekosistem bumi kita terpelihara semula!
+          </p>
+          <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg max-w-sm mx-auto mb-6 transform hover:scale-105 transition-all">
+            <h3 class="text-sm uppercase tracking-wider font-bold opacity-90">Pencapaian Misi</h3>
+            <div class="text-3xl font-extrabold my-1">3 / 3 Betul!</div>
+            <p class="text-xs opacity-80">Anda diisytiharkan sebagai Pejuang Hijau Hutan!</p>
+          </div>
+          <button onclick="restartSlides()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-8 py-3 rounded-2xl shadow-md transition-all inline-flex items-center gap-2 transform active:scale-95">
+            <i class="fa-solid fa-arrow-rotate-right"></i>
+            <span>Main Semula</span>
+          </button>
+        </div>
+      `;
+
+      // Update footer mascot
+      document.getElementById("mascot-bubble").innerHTML = "Terima kasih banyak-banyak! Kerjasama anda amat bernilai untuk melindungi masa depan alam semulajadi kita! ❤️";
+    }
+
+    function restartSlides() {
+      currentQuestionIndex = 0;
+      
+      // Reset interactive SVG forest to original dead state
+      const stumpGroup = document.getElementById("stump-group");
+      const tree1 = document.getElementById("restored-tree-1");
+      const tree2 = document.getElementById("restored-tree-2");
+      const bird = document.getElementById("cute-bird");
+      const bloom = document.getElementById("forest-bloom");
+      const statusText = document.getElementById("forest-status-text");
+
+      stumpGroup.style.opacity = "1";
+      tree1.className = "transition-all duration-700 opacity-0 transform translate-y-10 scale-0 origin-bottom";
+      tree2.className = "transition-all duration-700 opacity-0 transform translate-y-10 scale-0";
+      bird.className = "transition-all duration-1000 delay-300 opacity-0 transform -translate-y-5";
+      bloom.className = "transition-all duration-1000 opacity-0";
+      statusText.innerText = "Hutan sedang mengalami ancaman teruk...";
+      statusText.className = "text-sm font-bold text-slate-600";
+
+      // Render Q1
+      renderQuestion();
+      document.getElementById("mascot-bubble").innerHTML = "Hai! Saya Cikgu Burung Hantu. Bantu saya membuat pilihan bijak untuk menyelamatkan tempat tinggal kami!";
+    }
+  </script>
+</body>
+</html>
